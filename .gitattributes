@@ -1,0 +1,25 @@
+# Normalize line endings in the repo; working copy keeps per-OS defaults.
+* text=auto
+
+# Windows batch files must keep CRLF (cmd fails on LF).
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Sources are LF-safe.
+*.ts text eol=lf
+*.tsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+
+# Binary assets.
+*.png binary
+*.ico binary
+*.exe binary
+*.mp4 binary
+*.mkv binary
+*.avi binary

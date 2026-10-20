@@ -1,0 +1,41 @@
+appId: app.vibegallery.local
+productName: VibeGallery
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+
+extraResources:
+  - from: resources/bin
+    to: bin
+
+publish: null
+
+# better-sqlite3 ships NAPI prebuilds (stable ABI across node & electron) — no rebuild required.
+npmRebuild: false
+
+
+win:
+  target:
+    - nsis
+    - portable
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+
+mac:
+  target:
+    - dmg
+  category: public.app-category.video
+
+linux:
+  target:
+    - AppImage
+  category: Video
