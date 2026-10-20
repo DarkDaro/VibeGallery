@@ -27,7 +27,7 @@ export function createSourceRootsRepo(db: Database.Database): SourceRootsRepo {
   return {
     list: () => statements.list.all() as SourceRootRow[],
     get: (id) => statements.get.get(id) as SourceRootRow | undefined,
-    getByPath: (p) => statements.byPath.get(p) as SourceRootRow | undefined,
+    getByPath: (p) => statements.byPath.get(foldKey(p)) as SourceRootRow | undefined,
     upsert(path) {
       const existing = statements.byPath.get(foldKey(path)) as SourceRootRow | undefined;
       if (existing) return existing;

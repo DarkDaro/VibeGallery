@@ -8,6 +8,8 @@ import { createSourceRootsRepo, type SourceRootsRepo } from './source-roots';
 import { createTagsRepo, type TagsRepo } from './tags';
 import { createVideosRepo, type VideosRepo } from './videos';
 
+import { createScanErrorsRepo, type ScanErrorsRepo } from './scan-errors';
+
 export interface Repositories {
   videos: VideosRepo;
   tags: TagsRepo;
@@ -16,6 +18,7 @@ export interface Repositories {
   smartFilters: SmartFiltersRepo;
   exclusions: ExclusionsRepo;
   sourceRoots: SourceRootsRepo;
+  scanErrors: ScanErrorsRepo;
 }
 
 /** Builds all repositories on one connection. Call after migration. */
@@ -28,6 +31,7 @@ export function createRepositories(db: Database.Database): Repositories {
     smartFilters: createSmartFiltersRepo(db),
     exclusions: createExclusionsRepo(db),
     sourceRoots: createSourceRootsRepo(db),
+    scanErrors: createScanErrorsRepo(db),
   };
 }
 

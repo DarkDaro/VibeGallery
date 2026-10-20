@@ -2,6 +2,25 @@ import Database from 'better-sqlite3';
 
 import type { VideoRow, VideoStatus } from '../../../shared/types';
 
+export interface GalleryVideoRow {
+  id: number;
+  path: string;
+  filename: string;
+  ext: string;
+  folder: string;
+  size_bytes: number;
+  duration_ms: number;
+  width: number;
+  height: number;
+  codec: string;
+  status: VideoStatus;
+  favorite: number;
+  rating: number;
+  watched: number;
+  thumbnail_path: string | null;
+  added_at: number;
+}
+
 /**
  * Scan-facing insert/update plus flag helpers. Complex read queries
  * (paged gallery, filters, FTS join) come with their phases.
@@ -13,8 +32,13 @@ export interface VideosRepo {
   probeUpdate(id: number, meta: ProbeMeta): void;
   setStatus(id: number, status: VideoStatus): void;
   setFlags(id: number, flags: Partial<Pick<VideoRow, 'favorite' | 'rating' | 'watched' | 'notes'>>): void;
+  setThumbnailPath(id: number, thumbPath: string | null): void;
+  /** Deleting a video row; FTS and related bindings are cleaned up by triggers/cascades. */
+  remove(id: number): void;
+  listOverview(limit: number): GalleryVideoRow[];
+  countByRoot(): Map<number, number>;
   playbackState(id: number, positionMs: number): void;
-  allPaths(): Array<{ id: number; path: string; size_bytes: number; mtime_ms: number; status: VideoStatus }>;
+  allPaths(): Array<{ id: number; path: string; size_bytes: number; mtime_ms: number; status: VideoStatus; source_root_id: number | null }>;
 }
 
 export interface VideoInput {
@@ -82,7 +106,13 @@ export function createVideosRepo(db: Database.Database): VideosRepo {
         play_count = play_count + 1
       WHERE id = @id
     `),
-    allPaths: db.prepare('SELECT id, path, size_bytes, mtime_ms, status FROM videos'),
+    allPaths: db.prepare('SELECT id, path, size_bytes, mtime_ms, status, source_root_id FROM videos'),
+    overview: db.prepare(`
+      SELECT id, path, folder, filename, ext, size_bytes, duration_ms, width, height,
+             codec, status, favorite, rating, watched, thumbnail_path, added_at
+      FROM videos ORDER BY added_at DESC LIMIT ?
+    `),
+    countByRoot: db.prepare('SELECT source_root_id AS root_id, COUNT(*) AS n FROM videos WHERE source_root_id IS NOT NULL GROUP BY source_root_id'),
   };
 
   return {
@@ -101,6 +131,9 @@ export function createVideosRepo(db: Database.Database): VideosRepo {
     probeUpdate: (id, meta) =>
       statements.probeUpdate.run({ id, duration_ms: meta.duration_ms ?? null, width: meta.width ?? null, height: meta.height ?? null, bitrate_kbps: meta.bitrate_kbps ?? null, codec: meta.codec ?? null }),
     setStatus: (id, status) => statements.setStatus.run(status, id),
+    setThumbnailPath: (id, thumbPath) =>
+      db.prepare('UPDATE videos SET thumbnail_path = ? WHERE id = ?').run(thumbPath, id),
+    remove: (id) => db.prepare('DELETE FROM videos WHERE id = ?').run(id),
     setFlags: (id, flags) =>
       statements.setFlags.run({
         id,
@@ -110,6 +143,19 @@ export function createVideosRepo(db: Database.Database): VideosRepo {
         notes: flags.notes ?? null,
       }),
     playbackState: (id, positionMs) => statements.playback.run({ id, position: positionMs, now: Date.now() }),
-    allPaths: () => statements.allPaths.all() as Array<{ id: number; path: string; size_bytes: number; mtime_ms: number; status: VideoStatus }>,
+    allPaths: () =>
+      statements.allPaths.all() as Array<{
+        id: number;
+        path: string;
+        size_bytes: number;
+        mtime_ms: number;
+        status: VideoStatus;
+        source_root_id: number | null;
+      }>,
+    listOverview: (limit) => statements.overview.all(limit) as unknown as GalleryVideoRow[],
+    countByRoot: () => {
+      const rows = statements.countByRoot.all() as Array<{ root_id: number; n: number }>;
+      return new Map(rows.map((r) => [r.root_id, r.n]));
+    },
   };
 }

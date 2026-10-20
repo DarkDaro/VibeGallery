@@ -8,8 +8,18 @@ import { initSettingsService } from './services/settings';
 import { registerIpc } from './ipc';
 import { registerMediaPrivileges, registerMediaHandler } from './protocol/media';
 import { createMainWindow, getMainWindow } from './windows/main-window';
+import { createRepositories } from './db/repos';
+import { createScanManager } from './services/scan-manager';
+import { BrowserWindow } from 'electron';
 
 const devUrl = process.env.VITE_DEV_SERVER_URL;
+
+/** Push an event to all windows (a generic ipc broadcast for scan/settings). */
+function broadcast(event: string, payload: unknown): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send(event, payload);
+  }
+}
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -49,13 +59,15 @@ function boot(): void {
         onLog: (msg) => log.info(`[db] ${msg}`),
       });
       initSettingsService(db);
+      const repos = createRepositories(db);
+      const scanManager = createScanManager({ repos, broadcast });
+      registerIpc({ deps: { repos, scanManager } });
+      void scanManager;
     } catch (err) {
       log.error('[db] fatal:', err instanceof Error ? err.stack : String(err));
       app.exit(1);
       return;
     }
-
-    registerIpc();
 
     nativeTheme.on('updated', () => {
       const win = getMainWindow();
