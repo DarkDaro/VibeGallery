@@ -18,7 +18,7 @@ describe('migrations', () => {
     const version = db.pragma('user_version', { simple: true });
     db.close();
 
-    expect(version).toBe(2);
+    expect(version).toBe(3);
     closeDatabase();
   });
 
@@ -40,7 +40,7 @@ describe('migrations', () => {
     const db = new Database(file, { readonly: true });
     const version = db.pragma('user_version', { simple: true });
     db.close();
-    expect(version).toBe(2);
+    expect(version).toBe(3);
     closeDatabase();
   });
 });
