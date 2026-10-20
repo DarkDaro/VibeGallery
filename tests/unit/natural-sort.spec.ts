@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { naturalCompare } from '../../shared/natural-sort';
-
 describe('naturalCompare', () => {
   it('sorts digits by value, not per-character', () => {
     const input = ['Файл 10', 'Файл 2', 'Файл 1', 'Файл 01'];

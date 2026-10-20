@@ -6,6 +6,7 @@ import Database from 'better-sqlite3';
 import { initializeDatabase, closeDatabase } from '../../electron/db/client';
 import { createRepositories, type Repositories } from '../../electron/db/repos';
 import { CollectionCycleError } from '../../electron/db/repos/collections';
+import { naturalCompare } from '../../shared/natural-sort';
 
 let repos: Repositories;
 let db: Database.Database;
@@ -164,6 +165,42 @@ describe('repositories', () => {
       .prepare('EXPLAIN QUERY PLAN SELECT id FROM videos ORDER BY added_at')
       .all() as Array<{ detail: string }>;
     expect(planAdded.some((p) => p.detail.includes('idx_videos_added_at'))).toBe(true);
+  });
+
+  it('unicode names survive round-trip: Cyrillic, emoji and odd symbols', () => {
+    // Windows allows emoji and any of these symbols in file names.
+    const filename = 'видео №5 «Каникулы» [remaster] 🤯🔥.mov';
+    const dir = 'Test';
+    const id = repos.videos.upsert({
+      path: path.join('M', 'Test', filename),
+      source_root_id: null,
+      folder: dir,
+      filename,
+      ext: '.mov',
+      size_bytes: 4096,
+      mtime_ms: 1,
+    });
+
+    const row = repos.videos.get(id)!;
+    expect(row.filename).toBe(filename);
+    expect(row.path.endsWith(filename)).toBe(true);
+
+    // FTS indexes letter tokens; symbols and emoji are not searchable but must be stored.
+    expect(videoIdsMatching('видео')).toContain(id);
+    expect(videoIdsMatching('Каникулы')).toContain(id); // unicode61 keeps case, JS-side query is case-folded in searches
+
+    // Tag with emoji dedups by the same name and is stored verbatim.
+    const t1 = repos.tags.upsert('Скоро 🤯');
+    const t2 = repos.tags.upsert('Скоро 🤯');
+    expect(t2.id).toBe(t1.id);
+    expect(t1.name).toBe('Скоро 🤯');
+  });
+
+  it('natural sort does not break on emoji and mixed scripts', () => {
+    const input = ['🤯 part 1', '🤯 part 10', '🤯 part 2', 'видео.mov'];
+    const sorted = [...input].sort(naturalCompare);
+    // Code point order: Cyrillic letters come before emoji characters.
+    expect(sorted).toEqual(['видео.mov', '🤯 part 1', '🤯 part 2', '🤯 part 10']);
   });
 });
 
