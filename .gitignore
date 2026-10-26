@@ -12,13 +12,25 @@ resources/bin/
 tests/fixtures/videos/
 test-results/
 playwright-report/
+blob-report/
+.eslintcache
 
-# local db
+# local db and state
 *.db
 *.db-journal
 *.db-wal
 *.db-shm
+*.db.bak
+backups/
 *.log
 
 # local docs and reports (kept out of the repo on purpose)
 docs/
+
+# environment and editor noise
+.env
+.env.*
+.idea/
+Thumbs.db
+.DS_Store
+*.tmp

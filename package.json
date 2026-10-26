@@ -1,10 +1,13 @@
 {
   "name": "vibe-gallery",
   "version": "0.1.0",
-  "description": "VibeGallery — local video gallery",
+  "description": "VibeGallery: офлайн-галерея локальных видео",
   "author": "Dario",
   "private": true,
   "main": "dist-electron/main.js",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build",
@@ -17,7 +20,8 @@
     "lint": "eslint .",
     "fetch:ffmpeg": "node scripts/fetch-ffmpeg.mjs",
     "fixtures:gen": "node scripts/fixtures-gen.mjs",
-    "postinstall": "node scripts/postinstall.mjs"
+    "postinstall": "node scripts/postinstall.mjs",
+    "repo:check": "node scripts/check-repo.mjs"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.2.1",
