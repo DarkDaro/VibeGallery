@@ -228,14 +228,4 @@ tests/      unit (Vitest) и e2e (Playwright)
 scripts/    установка зависимостей, фикстуры, проверка репозитория
 ```
 
-## Публикация
-
-```powershell
-git remote add origin https://github.com/DarkDaro/VibeGallery.git
-git branch -M main
-git push -u origin main
-```
-
-Перед пушем: `npm run repo:check` и чистый `git status`.
-
 © 2026 DarkDaro. Все права защищены.
